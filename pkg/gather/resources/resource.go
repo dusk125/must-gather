@@ -3,7 +3,6 @@ package resources
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -39,13 +38,22 @@ var (
 	}
 )
 
-func runInspect(ctx context.Context, logger *slog.Logger, args ...string) {
-	a := []string{
+func gatherResources(ctx context.Context, logger *slog.Logger, logCollectionArgs string, resources []string, allNamespaces bool) {
+	args := []string{
 		"adm", "inspect",
 	}
-	a = append(a, args...)
-	cmd := exec.CommandContext(ctx, "oc", a...)
-	fmt.Println(cmd.String())
+	if logCollectionArgs != "" {
+		args = append(args, logCollectionArgs)
+	}
+
+	args = append(args, "--dest-dir", ".", "--rotated-pod-logs")
+	args = append(args, strings.Join(resources, ","))
+
+	if allNamespaces {
+		args = append(args, "--all-namespaces")
+	}
+
+	cmd := exec.CommandContext(ctx, "oc", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Dir = flags.BaseCollectionPath
@@ -57,29 +65,8 @@ func runInspect(ctx context.Context, logger *slog.Logger, args ...string) {
 	}
 }
 
-func gatherResources(ctx context.Context, logger *slog.Logger, logCollectionArgs string, resources []string, allNamespaces bool) {
-	args := []string{}
-
-	if logCollectionArgs != "" {
-		args = append(args, logCollectionArgs)
-	}
-
-	args = append(args, "--dest-dir", "must-gather", "--rotated-pod-logs")
-	args = append(args, strings.Join(resources, ","))
-
-	if allNamespaces {
-		args = append(args, "--all-namespaces")
-	}
-
-	runInspect(ctx, logger, args...)
-}
-
 func Gather(ctx context.Context, logger *slog.Logger) {
-	var logCollectionArgs string
-
-	if !flags.SinceTime.IsZero() {
-		logCollectionArgs = fmt.Sprintf("--since=\"%v\"", flags.SinceTime)
-	}
+	logCollectionArgs := flags.LogCollectionArgs()
 
 	internal.Group.Start(func() {
 		gatherResources(ctx, logger, logCollectionArgs, NamedResources, false)

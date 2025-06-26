@@ -19,6 +19,8 @@ import (
 	"github.com/openshift/must-gather/pkg/gather/etcd"
 	"github.com/openshift/must-gather/pkg/gather/insights"
 	"github.com/openshift/must-gather/pkg/gather/monitoring"
+	"github.com/openshift/must-gather/pkg/gather/olm"
+	priorityandfairness "github.com/openshift/must-gather/pkg/gather/priority_and_fairness"
 	"github.com/openshift/must-gather/pkg/gather/resources"
 	"github.com/spf13/cobra"
 )
@@ -32,14 +34,18 @@ var (
 		resources.Name,
 		insights.Name,
 		monitoring.Name,
+		olm.Name,
+		priorityandfairness.Name,
 	}
 	ExtraList = []string{}
 	AllList   = slices.Concat(DefaultList, ExtraList)
 	Mapping   = map[string]GatherFunc{
-		etcd.Name:       etcd.Gather,
-		resources.Name:  resources.Gather,
-		insights.Name:   insights.Gather,
-		monitoring.Name: monitoring.Gather,
+		etcd.Name:                etcd.Gather,
+		resources.Name:           resources.Gather,
+		insights.Name:            insights.Gather,
+		monitoring.Name:          monitoring.Gather,
+		olm.Name:                 olm.Gather,
+		priorityandfairness.Name: priorityandfairness.Gather,
 	}
 )
 
