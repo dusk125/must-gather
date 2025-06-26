@@ -10,8 +10,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/openshift/must-gather/internal"
 	"github.com/openshift/must-gather/pkg/flags"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var (
@@ -81,20 +81,16 @@ func Gather(ctx context.Context, logger *slog.Logger) {
 		logCollectionArgs = fmt.Sprintf("--since=\"%v\"", flags.SinceTime)
 	}
 
-	g := wait.Group{}
-
-	g.Start(func() {
+	internal.Group.Start(func() {
 		gatherResources(ctx, logger, logCollectionArgs, NamedResources, false)
 	})
-	g.Start(func() {
+	internal.Group.Start(func() {
 		filtered := slices.DeleteFunc(GroupResources, func(r string) bool {
 			return exec.CommandContext(ctx, "oc", "get", r).Run() != nil
 		})
 		gatherResources(ctx, logger, logCollectionArgs, filtered, false)
 	})
-	g.Start(func() {
+	internal.Group.Start(func() {
 		gatherResources(ctx, logger, logCollectionArgs, AllNamespacesResources, true)
 	})
-
-	g.Wait()
 }

@@ -13,11 +13,11 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/openshift/must-gather/internal"
 	"github.com/openshift/must-gather/pkg/flags"
 	"github.com/openshift/must-gather/pkg/gather/metrics"
 	"github.com/openshift/must-gather/pkg/util"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -127,23 +127,22 @@ func Gather(ctx context.Context, logger *slog.Logger) {
 	slog.Info("Getting information from pod", "pod", pods.Items[0].Name, "container", ETCDCTL_CONTAINER)
 	slog.Info("Using endpoints", "endpoints", endpoints)
 
-	g := wait.Group{}
-	g.Start(func() {
+	internal.Group.Start(func() {
 		ocp4etcdctl(ctx, logger, path.Join(etcdLogPath, "member_list.json"), pods.Items[0], endpoints, "member", "list", "-w", "json")
 	})
-	g.Start(func() {
+	internal.Group.Start(func() {
 		ocp4etcdctl(ctx, logger, path.Join(etcdLogPath, "endpoint_status.json"), pods.Items[0], endpoints, "endpoint", "status", "-w", "json")
 	})
-	g.Start(func() {
+	internal.Group.Start(func() {
 		ocp4etcdctl(ctx, logger, path.Join(etcdLogPath, "endpoint_health.json"), pods.Items[0], endpoints, "endpoint", "health", "-w", "json")
 	})
-	g.Start(func() {
+	internal.Group.Start(func() {
 		ocp4etcdctl(ctx, logger, path.Join(etcdLogPath, "alarm_list.json"), pods.Items[0], endpoints, "alarm", "list", "-w", "json")
 	})
-	g.Start(func() {
+	internal.Group.Start(func() {
 		getObjectCounts(ctx, logger, path.Join(etcdLogPath, "object_count.json"), pods.Items[0], endpoints)
 	})
-	g.Start(func() {
+	internal.Group.Start(func() {
 		err := metrics.GatherMetrics(ctx, clientset, etcdLogPath,
 			"etcd_disk_wal_fsync_duration_seconds_bucket{job=~\".*etcd.*\"}",
 			"etcd_network_peer_sent_failures_total{job=~\".*etcd.*\"}",
@@ -157,8 +156,6 @@ func Gather(ctx context.Context, logger *slog.Logger) {
 			logger.Error(gatherEtcdError.Error(), "error", err)
 		}
 	})
-
-	g.Wait()
 }
 
 func getObjectCounts(ctx context.Context, logger *slog.Logger, outFile string, pod v1.Pod, endpoints []string) {

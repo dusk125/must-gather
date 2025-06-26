@@ -14,11 +14,12 @@ import (
 	"slices"
 	"time"
 
+	"github.com/openshift/must-gather/internal"
 	"github.com/openshift/must-gather/pkg/flags"
 	"github.com/openshift/must-gather/pkg/gather/etcd"
+	"github.com/openshift/must-gather/pkg/gather/insights"
 	"github.com/openshift/must-gather/pkg/gather/resources"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type GatherFunc func(ctx context.Context, logger *slog.Logger)
@@ -27,12 +28,14 @@ var (
 	DefaultList = []string{
 		etcd.Name,
 		resources.Name,
+		insights.Name,
 	}
 	ExtraList = []string{}
 	AllList   = slices.Concat(DefaultList, ExtraList)
 	Mapping   = map[string]GatherFunc{
 		etcd.Name:      etcd.Gather,
 		resources.Name: resources.Gather,
+		insights.Name:  insights.Gather,
 	}
 )
 
@@ -50,8 +53,6 @@ func NewGatherCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use: "gather",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			g := wait.Group{}
-
 			if v, has := os.LookupEnv("MUST_GATHER_SINCE"); has {
 				d, err := time.ParseDuration(v)
 				if err != nil {
@@ -74,12 +75,12 @@ func NewGatherCommand() *cobra.Command {
 				if !has {
 					return fmt.Errorf("invalid gather command: %v", l)
 				}
-				g.Start(func() {
+				internal.Group.Start(func() {
 					gather(cmd.Context(), slog.With("command", l))
 				})
 			}
 
-			g.Wait()
+			internal.Group.Wait()
 
 			if outFormat == OFTarGz {
 				f, err := os.Create("gather.tar.gz")
