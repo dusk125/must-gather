@@ -18,6 +18,7 @@ import (
 	"github.com/openshift/must-gather/pkg/flags"
 	"github.com/openshift/must-gather/pkg/gather/etcd"
 	"github.com/openshift/must-gather/pkg/gather/insights"
+	"github.com/openshift/must-gather/pkg/gather/monitoring"
 	"github.com/openshift/must-gather/pkg/gather/resources"
 	"github.com/spf13/cobra"
 )
@@ -25,17 +26,20 @@ import (
 type GatherFunc func(ctx context.Context, logger *slog.Logger)
 
 var (
+	// TODO: convert this to a list that the individual pieces register to
 	DefaultList = []string{
 		etcd.Name,
 		resources.Name,
 		insights.Name,
+		monitoring.Name,
 	}
 	ExtraList = []string{}
 	AllList   = slices.Concat(DefaultList, ExtraList)
 	Mapping   = map[string]GatherFunc{
-		etcd.Name:      etcd.Gather,
-		resources.Name: resources.Gather,
-		insights.Name:  insights.Gather,
+		etcd.Name:       etcd.Gather,
+		resources.Name:  resources.Gather,
+		insights.Name:   insights.Gather,
+		monitoring.Name: monitoring.Gather,
 	}
 )
 

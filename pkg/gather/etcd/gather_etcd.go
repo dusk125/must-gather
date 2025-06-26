@@ -15,7 +15,7 @@ import (
 
 	"github.com/openshift/must-gather/internal"
 	"github.com/openshift/must-gather/pkg/flags"
-	"github.com/openshift/must-gather/pkg/gather/metrics"
+	"github.com/openshift/must-gather/pkg/gather/monitoring"
 	"github.com/openshift/must-gather/pkg/util"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -143,7 +143,7 @@ func Gather(ctx context.Context, logger *slog.Logger) {
 		getObjectCounts(ctx, logger, path.Join(etcdLogPath, "object_count.json"), pods.Items[0], endpoints)
 	})
 	internal.Group.Start(func() {
-		err := metrics.GatherMetrics(ctx, clientset, etcdLogPath,
+		err := monitoring.GatherMetrics(ctx, clientset, etcdLogPath,
 			"etcd_disk_wal_fsync_duration_seconds_bucket{job=~\".*etcd.*\"}",
 			"etcd_network_peer_sent_failures_total{job=~\".*etcd.*\"}",
 			"etcd_network_peer_round_trip_time_seconds_bucket{job=~\".*etcd.*\"}",

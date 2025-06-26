@@ -1,4 +1,4 @@
-package metrics
+package monitoring
 
 import (
 	"compress/gzip"
@@ -9,14 +9,9 @@ import (
 	"path"
 
 	"github.com/openshift/must-gather/pkg/flags"
-	"github.com/openshift/must-gather/pkg/util"
-	v1 "k8s.io/api/core/v1"
+
 	"k8s.io/client-go/kubernetes"
 )
-
-func runningMonitoringPods(ctx context.Context, clientset *kubernetes.Clientset) (pods *v1.PodList, err error) {
-	return util.RunningPods(ctx, clientset, "openshift-monitoring", "prometheus=k8s")
-}
 
 func GatherMetrics(ctx context.Context, clientset *kubernetes.Clientset, basePath string, matches ...string) (err error) {
 	pods, err := runningMonitoringPods(ctx, clientset)
